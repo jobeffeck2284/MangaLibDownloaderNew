@@ -1,0 +1,4 @@
+Flask
+Flask-CORS
+requests
+Pillow==10.4.0
