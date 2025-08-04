@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Downloader</title>
+    <style>
+        :root {
+            /* Обновленная цветовая схема с черным как основным цветом */
+            --bg-primary: #121212; /* Очень темный фон */
+            --bg-secondary: #1e1e1e; /* Более светлый темный фон для карточек */
+            --bg-tertiary: #2d2d2d; /* Еще более светлый для выделения */
+            --text-primary: #ffffff; /* Основной текст - белый */
+            --text-secondary: #cccccc; /* Вторичный текст - светло-серый */
+            --text-tertiary: #aaaaaa; /* Третичный текст - серый */
+            --border-color: #444444; /* Цвет границ */
+            --accent-color: #ffffff; /* Акцентный цвет - белый */
+            --hover-color: #e0e0e0; /* Цвет при наведении */
+            --success-color: #4caf50; /* Зеленый для успеха */
+            --error-color: #f44336; /* Красный для ошибок */
+            --warning-color: #ff9800; /* Оранжевый для предупреждений */
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background-color: transparent;
+            border: none;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: all var(--transition-speed);
+            position: relative;
+            outline: none;
+        }
+
+        .tab-button:hover {
+            color: var(--accent-color);
+        }
+
+        .tab-button.active {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--accent-color);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Общие стили для карточек */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: box-shadow var(--transition-speed);
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 10px rgba(255,255,255,0.1);
+        }
+
+        .card-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        /* Поиск */
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+            transition: border-color var(--transition-speed);
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .search-button {
+            padding: 12px 20px;
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color var(--transition-speed);
+            font-weight: bold;
+        }
+
+        .search-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        /* Результаты поиска */
+        .results-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+        }
+
+        .manga-item {
+            display: flex;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+        }
+
+        .manga-item:last-child {
+            border-bottom: none;
+        }
+
+        .manga-item:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .manga-cover {
+            width: 50px;
+            height: 70px;
+            margin-right: 15px;
+            object-fit: cover;
+            border-radius: 4px;
+            background-color: #333; /* Темный placeholder */
+            /* Анимация появления */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .manga-cover.loaded {
+            opacity: 1;
+        }
+
+        .manga-info {
+            flex: 1;
+        }
+
+        .manga-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+
+        .manga-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .manga-site {
+            font-size: 0.8em;
+            color: var(--accent-color);
+        }
+
+        /* Детали манги */
+        .manga-details {
+            display: flex;
+            gap: 20px;
+        }
+
+        .manga-cover-large {
+            width: 150px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            background-color: #333; /* Темный placeholder */
+            /* Анимация появления */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .manga-cover-large.loaded {
+            opacity: 1;
+        }
+
+        .manga-info-text {
+            flex: 1;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        /* Скачивание */
+        .download-params {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .param-input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .download-button {
+            padding: 10px 15px;
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            font-weight: bold;
+        }
+
+        .download-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .download-button:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Лог */
+        .log-container {
+            background-color: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Настройки */
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .token-input {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .save-button {
+            align-self: flex-start;
+            padding: 10px 15px;
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            font-weight: bold;
+        }
+
+        .save-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .info-box {
+            background-color: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
+        .links {
+            margin-top: 10px;
+        }
+
+        .link-button {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 8px 12px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .link-button:hover {
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+            border-color: var(--accent-color);
+        }
+
+        /* Таблица глав */
+        .chapters-table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
+        .chapters-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-tertiary);
+        }
+
+        .chapters-table th,
+        .chapters-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chapters-table th {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .chapters-table tr:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .chapters-table tr.selected {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .chapter-row {
+            cursor: pointer;
+        }
+
+        /* Кнопки управления главами */
+        .chapters-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chapters-button {
+            padding: 8px 12px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+
+        .chapters-button:hover {
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+            border-color: var(--accent-color);
+        }
+
+        .chapters-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Анимации */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 500px; opacity: 1; }
+        }
+
+        /* Состояния */
+        .loading {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .success {
+            color: var(--success-color);
+        }
+
+        .error {
+            color: var(--error-color);
+        }
+
+        .warning {
+            color: var(--warning-color);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .manga-details {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .download-params {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chapters-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manga Downloader</h1>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="search">Поиск манги</button>
+            <button class="tab-button" data-tab="download">Скачивание</button>
+            <button class="tab-button" data-tab="settings">Настройки</button>
+        </div>
+
+        <div id="search" class="tab-content active">
+            <div class="card">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Введите название манги...">
+                    <button id="searchButton" class="search-button">Найти</button>
+                </div>
+                <div id="searchResults" class="results-container"></div>
+            </div>
+        </div>
+
+        <div id="download" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Информация о манге</h2>
+                <div id="mangaDetails" class="manga-details">
+                    <img id="mangaCover" class="manga-cover-large" src="" alt="Обложка">
+                    <div class="manga-info-text">
+                        <div class="info-item"><span class="info-label">Название:</span> <span id="mangaTitle">-</span></div>
+                        <div class="info-item"><span class="info-label">Тип:</span> <span id="mangaType">-</span></div>
+                        <div class="info-item"><span class="info-label">Статус:</span> <span id="mangaStatus">-</span></div>
+                        <div class="info-item"><span class="info-label">Рейтинг:</span> <span id="mangaRating">-</span></div>
+                        <div class="info-item"><span class="info-label">Источник:</span> <span id="mangaSite">-</span></div>
+                        <div class="info-item">
+                            <span class="info-label">Главы:</span>
+                            <span id="mangaChaptersInfo">
+                                Томов: <span id="mangaVolumes">-</span>,
+                                Глав: <span id="mangaChapters">-</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chapters-buttons">
+                    <button id="updateChaptersButton" class="chapters-button" disabled>Обновить главы</button>
+                    <button id="showAllChaptersButton" class="chapters-button" disabled>Показать все главы</button>
+                </div>
+
+                <div id="chaptersTableContainer" class="chapters-table-container" style="display: none;">
+                    <table class="chapters-table">
+                        <thead>
+                            <tr>
+                                <th>Том</th>
+                                <th>Глава</th>
+                                <th>Название</th>
+                                <th>Дата публикации</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chaptersTableBody">
+                            <!-- Главы будут добавлены сюда -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Параметры скачивания</h2>
+                <div class="download-params">
+                    <label for="volumeInput">Том:</label>
+                    <input type="text" id="volumeInput" class="param-input">
+                    <label for="chapterInput">Глава:</label>
+                    <input type="text" id="chapterInput" class="param-input">
+                    <button id="downloadButton" class="download-button">Скачать главу</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Лог скачивания</h2>
+                <div id="downloadLog" class="log-container"></div>
+            </div>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Токен авторизации</h2>
+                <div class="settings-form">
+                    <input type="text" id="tokenInput" class="token-input" placeholder="Введите ваш токен авторизации">
+                    <button id="saveTokenButton" class="save-button">Сохранить</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Информация</h2>
+                <div class="info-box">
+                    <p>Некоторые манги требуют токен авторизации для доступа к главам. Вы можете получить токен, войдя на сайт и проверив запросы в инструментах разработчика.</p>
+                    <div class="links">
+                        <a href="https://mangalib.me/login" target="_blank" class="link-button">Открыть MangaLib</a>
+                        <a href="https://hentailib.me/login" target="_blank" class="link-button">Открыть HentaiLib</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Глобальные переменные ---
+        const API_BASE = 'http://localhost:5000/api';
+        let currentManga = null;
+        let currentDownloadTaskId = null;
+        let downloadStatusInterval = null;
+        let currentChaptersList = []; // Хранит список всех глав для отображения
+        // Хранилище для загруженных обложек в результатах поиска
+        const searchCoverCache = new Map();
+
+        // --- Утилиты ---
+        function showNotification(message, type = 'info') {
+            // Простое уведомление в лог
+            const logElement = document.getElementById('downloadLog');
+            const time = new Date().toLocaleTimeString();
+            const typeClass = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logElement.innerHTML += `[${time}] <span class="${typeClass}">${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function switchTab(tabName) {
+            // Скрыть все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Показать выбранную вкладку
+            document.getElementById(tabName).classList.add('active');
+
+            // Обновить активную кнопку вкладки
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`.tab-button[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // --- API Функции ---
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API call error:', error);
+                showNotification(`Ошибка API: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function searchManga(query) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '<div class="loading">Поиск...</div>';
+
+            try {
+                const data = await apiCall(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                displaySearchResults(data.results);
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="error">Ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function getMangaDetails(slug_url, site_id) {
+            try {
+                const data = await apiCall(`${API_BASE}/manga/${slug_url}?site_id=${site_id}`);
+                currentManga = data.manga;
+                displayMangaDetails(currentManga);
+                // Автоматически загружаем информацию о главах
+                updateChaptersInfo();
+                switchTab('download');
+            } catch (error) {
+                showNotification(`Ошибка загрузки деталей: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateChaptersInfo() {
+            if (!currentManga) {
+                showNotification('Сначала выберите мангу', 'warning');
+                return;
+            }
+
+            const volumesEl = document.getElementById('mangaVolumes');
+            const chaptersEl = document.getElementById('mangaChapters');
+            volumesEl.textContent = 'загрузка...';
+            chaptersEl.textContent = 'загрузка...';
+
+            try {
+                const data = await apiCall(`${API_BASE}/manga/${currentManga.slug_url}/chapters_info`);
+                volumesEl.textContent = data.chapters_info.volumes;
+                chaptersEl.textContent = data.chapters_info.chapters;
+
+                // Сохраняем список глав для отображения в таблице
+                currentChaptersList = data.chapters_info.chapters_list || [];
+
+                // Отображаем таблицу глав
+                displayChaptersTable(currentChaptersList);
+
+                showNotification(`Информация о главах обновлена: ${data.chapters_info.volumes} томов, ${data.chapters_info.chapters} глав`);
+
+                // Активируем кнопки управления главами
+                document.getElementById('updateChaptersButton').disabled = false;
+                document.getElementById('showAllChaptersButton').disabled = false;
+            } catch (error) {
+                volumesEl.textContent = 'ошибка';
+                chaptersEl.textContent = 'ошибка';
+                showNotification(`Ошибка обновления глав: ${error.message}`, 'error');
+                // Деактивируем кнопки при ошибке
+                document.getElementById('updateChaptersButton').disabled = true;
+                document.getElementById('showAllChaptersButton').disabled = true;
+            }
+        }
+
+        async function startDownload(volume, chapter) {
+            if (!currentManga) {
+                showNotification('Сначала выберите мангу', 'warning');
+                return;
+            }
+
+            const logElement = document.getElementById('downloadLog');
+            logElement.innerHTML = ''; // Очистить лог перед новой загрузкой
+
+            try {
+                const data = await apiCall(`${API_BASE}/download_chapter`, {
+                    method: 'POST',
+                    body: JSON.stringify({ volume, chapter })
+                });
+                currentDownloadTaskId = data.task_id;
+                showNotification(data.message);
+                // Начать опрос статуса загрузки
+                startPollingDownloadStatus();
+            } catch (error) {
+                showNotification(`Ошибка начала загрузки: ${error.message}`, 'error');
+            }
+        }
+
+        async function getDownloadStatus(taskId) {
+            try {
+                return await apiCall(`${API_BASE}/download_status/${taskId}`);
+            } catch (error) {
+                console.error('Error getting download status:', error);
+                return null;
+            }
+        }
+
+        function startPollingDownloadStatus() {
+            if (downloadStatusInterval) {
+                clearInterval(downloadStatusInterval);
+            }
+
+            downloadStatusInterval = setInterval(async () => {
+                if (!currentDownloadTaskId) {
+                    clearInterval(downloadStatusInterval);
+                    return;
+                }
+
+                const statusData = await getDownloadStatus(currentDownloadTaskId);
+                if (!statusData || statusData.error) {
+                    showNotification('Ошибка получения статуса загрузки', 'error');
+                    clearInterval(downloadStatusInterval);
+                    return;
+                }
+
+                const task = statusData.task;
+                showNotification(task.message);
+
+                if (task.status === 'completed' || task.status === 'error') {
+                    clearInterval(downloadStatusInterval);
+                    currentDownloadTaskId = null;
+                    if (task.status === 'completed' && task.folder_path) {
+                        showNotification(`Файлы сохранены в: ${task.folder_path}`, 'success');
+                    }
+                }
+            }, 1000); // Опрашивать каждую секунду
+        }
+
+        async function saveAuthToken(token) {
+            try {
+                const data = await apiCall(`${API_BASE}/set_token`, {
+                    method: 'POST',
+                    body: JSON.stringify({ token })
+                });
+                showNotification(data.message, 'success');
+            } catch (error) {
+                showNotification(`Ошибка сохранения токена: ${error.message}`, 'error');
+            }
+        }
+
+        // --- Отображение данных ---
+        function displaySearchResults(results) {
+            const resultsContainer = document.getElementById('searchResults');
+            if (!results || results.length === 0) {
+                resultsContainer.innerHTML = '<div>Ничего не найдено</div>';
+                return;
+            }
+
+            resultsContainer.innerHTML = '';
+            results.forEach(manga => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'manga-item';
+
+                // Создаем элемент изображения обложки
+                const coverElement = document.createElement('img');
+                coverElement.className = 'manga-cover';
+                coverElement.alt = 'Cover';
+                coverElement.loading = 'lazy'; // Ленивая загрузка
+
+                // Создаем контейнер для текстовой информации
+                const infoElement = document.createElement('div');
+                infoElement.className = 'manga-info';
+                infoElement.innerHTML = `
+                    <div class="manga-title">${manga.rus_name}</div>
+                    <div class="manga-subtitle">${manga.eng_name}</div>
+                    <div class="manga-site">${manga.site_name}</div>
+                `;
+
+                // Добавляем элементы в контейнер результата
+                itemElement.appendChild(coverElement);
+                itemElement.appendChild(infoElement);
+
+                // Добавляем обработчик клика
+                itemElement.addEventListener('click', () => {
+                    getMangaDetails(manga.slug_url, manga.site_id);
+                });
+
+                // Добавляем элемент в контейнер результатов
+                resultsContainer.appendChild(itemElement);
+
+                // Загружаем обложку
+                loadSearchCover(coverElement, manga.cover_url);
+            });
+        }
+
+        function loadSearchCover(imgElement, coverUrl) {
+            // Сброс состояния
+            imgElement.classList.remove('loaded');
+
+            if (!coverUrl) {
+                // Если URL обложки пустой, показываем placeholder
+                imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNzAiIHZpZXdCb3g9IjAgMCA1MCA3MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjcwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjI1IiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjgiIGZpbGw9IiNjY2MiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K';
+                imgElement.classList.add('loaded');
+                imgElement.alt = 'Нет обложки';
+                return;
+            }
+
+            // Проверяем кэш
+            if (searchCoverCache.has(coverUrl)) {
+                const cachedImg = searchCoverCache.get(coverUrl);
+                imgElement.src = cachedImg.src;
+                imgElement.classList.add('loaded');
+                return;
+            }
+
+            // Создаем новый объект Image для загрузки
+            const img = new Image();
+
+            img.onload = function() {
+                // Когда изображение загружено, устанавливаем его в элемент
+                imgElement.src = this.src;
+                imgElement.classList.add('loaded');
+                // Кэшируем изображение
+                searchCoverCache.set(coverUrl, this);
+            };
+
+            img.onerror = function() {
+                // При ошибке загрузки показываем placeholder
+                imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNzAiIHZpZXdCb3g9IjAgMCA1MCA3MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjcwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjI1IiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjgiIGZpbGw9IiNjY2MiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkltYWdlIEVycm9yPC90ZXh0Pgo8L3N2Zz4K';
+                imgElement.classList.add('loaded');
+                imgElement.alt = 'Ошибка загрузки';
+            };
+
+            // Начинаем загрузку изображения
+            img.src = coverUrl;
+        }
+
+        function displayMangaDetails(manga) {
+            const coverElement = document.getElementById('mangaCover');
+
+            // Сброс состояния обложки
+            coverElement.classList.remove('loaded');
+            coverElement.alt = 'Обложка';
+
+            // Установка данных текстовой информации
+            document.getElementById('mangaTitle').textContent = manga.title || '-';
+            document.getElementById('mangaType').textContent = manga.type || '-';
+            document.getElementById('mangaStatus').textContent = manga.status || '-';
+            document.getElementById('mangaRating').textContent = manga.rating || '-';
+            document.getElementById('mangaSite').textContent = manga.site || '-';
+            // Информация о главах будет обновлена отдельно
+
+            // Обработка обложки
+            if (manga.cover_url) {
+                coverElement.src = manga.cover_url;
+                coverElement.onload = function() {
+                    this.classList.add('loaded');
+                };
+                coverElement.onerror = function() {
+                    // Показать placeholder при ошибке загрузки
+                    this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9Ijc1IiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2NjYyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2UgRXJyb3I8L3RleHQ+Cjwvc3ZnPgo=';
+                    this.classList.add('loaded');
+                    this.alt = 'Обложка не найдена';
+                };
+            } else {
+                // Если URL обложки пустой, показываем placeholder
+                coverElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9Ijc1IiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2NjYyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+Cjwvc3ZnPgo=';
+                coverElement.classList.add('loaded');
+                coverElement.alt = 'Нет обложки';
+            }
+        }
+
+        function displayChaptersTable(chapters) {
+            const tableContainer = document.getElementById('chaptersTableContainer');
+            const tableBody = document.getElementById('chaptersTableBody');
+
+            if (!chapters || chapters.length === 0) {
+                tableContainer.style.display = 'none';
+                return;
+            }
+
+            // Очищаем таблицу
+            tableBody.innerHTML = '';
+
+            // Добавляем строки в таблицу
+            chapters.forEach(chapter => {
+                const row = document.createElement('tr');
+                row.className = 'chapter-row';
+                const volume = chapter.volume || '';
+                const chapterNum = chapter.number || '';
+                const name = chapter.name || '';
+                // Берем только дату из created_at
+                const date = chapter.created_at ? chapter.created_at.substring(0, 10) : '';
+
+                row.innerHTML = `
+                    <td style="text-align: center;">${volume}</td>
+                    <td style="text-align: center;">${chapterNum}</td>
+                    <td>${name}</td>
+                    <td style="text-align: center;">${date}</td>
+                `;
+
+                // Добавляем обработчик клика для копирования информации
+                row.addEventListener('dblclick', () => {
+                    // Копируем номер тома и главы в буфер обмена
+                    navigator.clipboard.writeText(`Том: ${volume}, Глава: ${chapterNum}`)
+                        .then(() => {
+                            showNotification(`Том: ${volume}, Глава: ${chapterNum} скопированы в буфер обмена`, 'success');
+                        })
+                        .catch(err => {
+                            showNotification(`Ошибка копирования: ${err}`, 'error');
+                        });
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            // Показываем таблицу
+            tableContainer.style.display = 'block';
+        }
+
+        // --- Инициализация и обработчики событий ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Переключение вкладок
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    switchTab(button.dataset.tab);
+                });
+            });
+
+            // Поиск
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            searchButton.addEventListener('click', () => {
+                const query = searchInput.value.trim();
+                if (query) {
+                    searchManga(query);
+                }
+            });
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchButton.click();
+                }
+            });
+
+            // Скачивание
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.addEventListener('click', () => {
+                const volume = document.getElementById('volumeInput').value.trim();
+                const chapter = document.getElementById('chapterInput').value.trim();
+                if (volume && chapter) {
+                    startDownload(volume, chapter);
+                } else {
+                    showNotification('Введите номер тома и главы', 'warning');
+                }
+            });
+
+            // Настройки
+            const saveTokenButton = document.getElementById('saveTokenButton');
+            saveTokenButton.addEventListener('click', () => {
+                const token = document.getElementById('tokenInput').value.trim();
+                saveAuthToken(token);
+            });
+
+            // Кнопки управления главами
+            document.getElementById('updateChaptersButton').addEventListener('click', updateChaptersInfo);
+            document.getElementById('showAllChaptersButton').addEventListener('click', () => {
+                if (currentChaptersList.length > 0) {
+                    displayChaptersTable(currentChaptersList);
+                } else {
+                    showNotification('Список глав пуст', 'warning');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
